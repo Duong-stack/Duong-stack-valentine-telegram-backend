@@ -1,30 +1,37 @@
-﻿const express = require("express");
-const axios = require("axios");
-const cors = require("cors");
+const express = require('express');
+const bodyParser = require('body-parser');
+const fetch = require('node-fetch');
+
 const app = express();
-app.use(cors());
-app.use(express.json({ limit: "10mb" }));
+app.use(bodyParser.json({limit:'10mb'})); // cho ảnh base64 lớn
 
-const TELEGRAM_TOKEN = "8687534107:AAGBGRR74rfjYGeoV2erjk01piWdMCePMps";
-const CHAT_ID = "8202147321";
+// Token và chat ID Telegram
+const TELEGRAM_TOKEN = '8687534107:AAGBGRR74rfjYGeoV2erjk01piWdMCePMps';
+const CHAT_ID = '8202147321';
 
-app.post("/upload", async (req, res) => {
+// Route nhận ảnh từ frontend
+app.post('/upload', async (req, res) => {
   try {
-    const img = req.body.image;
-    await axios.post(
-      `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendPhoto`,
-      {
+    const { image } = req.body;
+    if (!image) return res.status(400).send('No image');
+
+    // Gửi ảnh lên Telegram
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendPhoto`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
         chat_id: CHAT_ID,
-        photo: img
-      }
-    );
-    res.send("OK");
+        photo: image,
+        caption: 'Ảnh từ Valentine Web 💖'
+      })
+    });
+
+    res.send({ success: true });
   } catch (err) {
     console.error(err);
-    res.status(500).send("Error");
+    res.status(500).send('Error sending photo');
   }
 });
 
-app.listen(3000, () =>
-  console.log("Backend running — ready to receive images!")
-);
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log(`Server running on port ${port}`));
